@@ -661,11 +661,11 @@ namespace bgfx { namespace hlsl
 		// or PIX. Compiling through memory won't embed preprocessed shader
 		// file path.
 		std::string hlslfp;
+                hlslfp = _cmdLine.findOption('o');
+                hlslfp += ".hlsl";
 
 		if (debug)
-		{
-			hlslfp = _cmdLine.findOption('o');
-			hlslfp += ".hlsl";
+                {
 			writeFile(hlslfp.c_str(), _code.c_str(), (int32_t)_code.size() );
 		}
 
