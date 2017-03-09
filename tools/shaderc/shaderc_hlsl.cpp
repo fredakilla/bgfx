@@ -22,8 +22,76 @@
 #	define D3D_SVF_USED 2
 #endif // D3D_SVF_USED
 
+#include <string>
+#include <list>
+#include <iostream>
+#include <memory>
+#include <fstream>      // std::ifstream
+
 namespace bgfx { namespace hlsl
 {
+
+	//---------------------------------------------------------------------------------------------
+	// fred: add a custom include handler (see: D3DCompile)
+	//---------------------------------------------------------------------------------------------
+	class CDXInclude : public ID3DInclude
+	{
+	public:
+		CDXInclude(const std::string& baseFile);
+		virtual ~CDXInclude() {}
+
+		HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName,
+			LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
+
+		HRESULT __stdcall Close(LPCVOID pData);
+
+	private:
+		std::string m_baseDir;
+		std::list<std::unique_ptr<char[]>> m_data;
+	};
+
+	CDXInclude::CDXInclude(const std::string& baseFile)
+	{
+		size_t pos = baseFile.rfind('/');
+		if (pos != std::string::npos)
+			m_baseDir = baseFile.substr(0, pos) + '/';
+	}
+
+	HRESULT CDXInclude::Open(D3D_INCLUDE_TYPE, LPCSTR pFileName,
+		LPCVOID, LPCVOID *ppData, UINT *pBytes)
+	{
+		// Open file
+		std::ifstream file(m_baseDir + pFileName, std::ios::binary);
+		if (!file.is_open())
+		{
+			*ppData = NULL;
+			*pBytes = 0;
+			return S_OK;
+		}
+
+		// Get filesize
+		file.seekg(0, std::ios::end);
+		UINT size = static_cast<UINT>(file.tellg());
+		file.seekg(0, std::ios::beg);
+
+		// Create buffer and read file
+		std::unique_ptr<char[]> data(new char[size]);
+		file.read(data.get(), size);
+		*ppData = data.get();
+		*pBytes = size;
+		m_data.push_back(std::move(data));
+		return S_OK;
+	}
+
+	HRESULT CDXInclude::Close(LPCVOID)
+	{
+		//m_data.remove_if(shared_equals_raw(pData));
+		return S_OK;
+	}
+	//---------------------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------------------
+
+
 	typedef HRESULT(WINAPI* PFN_D3D_COMPILE)(_In_reads_bytes_(SrcDataSize) LPCVOID pSrcData
 		, _In_ SIZE_T SrcDataSize
 		, _In_opt_ LPCSTR pSourceName
@@ -601,11 +669,13 @@ namespace bgfx { namespace hlsl
 			writeFile(hlslfp.c_str(), _code.c_str(), (int32_t)_code.size() );
 		}
 
+		CDXInclude* includeHandler = new CDXInclude(hlslfp.c_str());
+
 		HRESULT hr = D3DCompile(_code.c_str()
 			, _code.size()
 			, hlslfp.c_str()
 			, NULL
-			, NULL
+			, includeHandler
 			, "main"
 			, profile
 			, flags
@@ -613,6 +683,9 @@ namespace bgfx { namespace hlsl
 			, &code
 			, &errorMsg
 			);
+
+		delete includeHandler;
+
 		if (FAILED(hr)
 		|| (werror && NULL != errorMsg) )
 		{
