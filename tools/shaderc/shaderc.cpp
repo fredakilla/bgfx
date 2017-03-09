@@ -113,14 +113,15 @@ namespace bgfx
 		NULL
 	};
 
-	const char* s_uniformTypeName[] =
+	extern const char* s_uniformTypeName[10];
+	/*const char* s_uniformTypeName[] =
 	{
 		"int",  "int",
 		NULL,   NULL,
 		"vec4", "float4",
 		"mat3", "float3x3",
 		"mat4", "float4x4",
-	};
+	};*/
 	BX_STATIC_ASSERT(BX_COUNTOF(s_uniformTypeName) == UniformType::Count*2);
 
 	const char* interpolationDx11(const char* _glsl)
@@ -137,7 +138,10 @@ namespace bgfx
 		return _glsl; // centroid, noperspective
 	}
 
-	const char* getUniformTypeName(UniformType::Enum _enum)
+	extern const char* getUniformTypeName(UniformType::Enum _enum);
+	extern UniformType::Enum nameToUniformTypeEnum(const char* _name);
+
+	/*const char* getUniformTypeName(UniformType::Enum _enum)
 	{
 		uint32_t idx = _enum & ~(BGFX_UNIFORM_FRAGMENTBIT|BGFX_UNIFORM_SAMPLERBIT);
 		if (idx < UniformType::Count)
@@ -160,7 +164,7 @@ namespace bgfx
 		}
 
 		return UniformType::Count;
-	}
+	}*/
 
 	int32_t writef(bx::WriterI* _writer, const char* _format, ...)
 	{
@@ -744,8 +748,14 @@ namespace bgfx
 			);
 	}
 
+	char     _shaderErrorBuffer[UINT16_MAX];
+	uint16_t _shaderErrorBufferPos = 0;
+
 	int compileShader(int _argc, const char* _argv[])
 	{
+		_shaderErrorBuffer[0] = '\0';
+		_shaderErrorBufferPos = 0;
+
 		bx::CommandLine cmdLine(_argc, _argv);
 
 		if (cmdLine.hasArg('h', "help") )
@@ -2048,9 +2058,29 @@ namespace bgfx
 		return EXIT_FAILURE;
 	}
 
+
+	void compilerError(const char *_format, ...)
+	{
+		va_list args;
+		va_start(args, _format);
+		_shaderErrorBufferPos += vsprintf(&_shaderErrorBuffer[_shaderErrorBufferPos], _format, args);
+		va_end(args);
+	}
+
+	void getShaderError(char* _outputText, uint16_t& _outputSize)
+	{
+		strcpy(_outputText, _shaderErrorBuffer);
+		_outputSize = _shaderErrorBufferPos;
+	}
+
+	bool compileSPIRVShader(bx::CommandLine&, uint32_t, const std::string&, bx::WriterI*)
+	{
+		return false;
+	}
+
 } // namespace bgfx
 
 int main(int _argc, const char* _argv[])
 {
-	return bgfx::compileShader(_argc, _argv);
+        return bgfx::compileShader(_argc, _argv);
 }

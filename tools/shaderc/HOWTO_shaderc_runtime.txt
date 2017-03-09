@@ -1,0 +1,53 @@
+https://github.com/bkaradzic/bgfx/issues/405
+
+
+I also wanted to use shaderc as a library and in case it's of any use to anyone else this worked for me (in Visual Studio):
+
+    Modify the shaderc tool's configuration type (shaderc's project properties / general tab) from executable to static lib and change the "Target Extension" to ".lib"
+    If you compile it as is and then link it into your target executable along with the bgfx lib then you'll get a couple of errors indicating that getUniformTypeName(), nameToUniformTypeEnum() functions and the s_uniformTypeName array are already defined in bgfx lib (as they are also defined in the shaderc code).
+
+To get around this...
+
+    Mark getUniformTypeName() and nameToUniformTypeEnum() as extern, removing their definitions from the shaderc.cpp file and also remove the s_uniformTypeName array definition in the shaderc.cpp file
+    Compile it to get a static lib version of the shaderc lib
+
+You'll need to define compileShader() in the header file so you can call it and also expose methods to enable the caller to get at any compilation errors.
+
+andr3wmac's solution to this is:
+
+Add the following 3 function defintions to shaderc.h inside the bgfx namespace:
+
+void compilerError(const char *_format, ...);
+int compileShader(int _argc, const char* _argv[]);
+void getShaderError(char* _outputText, uint16_t& _outputSize);
+#define fprintf(target, format, ...) compilerError(format, ##__VA_ARGS__)
+
+Modify shaderc.cpp by adding the definitions of the missing functions we declared above:
+
+void compilerError(const char *_format, ...)
+{
+    va_list args;
+    va_start(args, _format);
+    _shaderErrorBufferPos += vsprintf(&_shaderErrorBuffer[_shaderErrorBufferPos], _format, args);
+    va_end(args);
+}
+
+void getShaderError(char* _outputText, uint16_t& _outputSize)
+{
+    strcpy(_outputText, _shaderErrorBuffer);
+    _outputSize = _shaderErrorBufferPos;
+}
+
+Modify compileShader() definition (and preceding lines) as follows:
+
+char     _shaderErrorBuffer[UINT16_MAX];
+uint16_t _shaderErrorBufferPos = 0;
+
+int compileShader(int _argc, const char* _argv[])
+{
+    _shaderErrorBuffer[0] = '\0';
+    _shaderErrorBufferPos = 0;
+
+    bx::CommandLine cmdLine(_argc, _argv);
+
+Compile it to get a shaderc lib which you can then link along with bgfx lib into your app.
