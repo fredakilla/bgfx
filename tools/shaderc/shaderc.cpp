@@ -2080,7 +2080,7 @@ namespace bgfx
 
 } // namespace bgfx
 
-int main(int _argc, const char* _argv[])
+/*int main(int _argc, const char* _argv[])
 {
         return bgfx::compileShader(_argc, _argv);
-}
+}*/
