@@ -91,7 +91,7 @@ project "glslang"
 	configuration {}
 
 project "shaderc"
-	kind "ConsoleApp"
+	kind "StaticLib"
 
 	local GLSL_OPTIMIZER = path.join(BGFX_DIR, "3rdparty/glsl-optimizer")
 	local FCPP_DIR = path.join(BGFX_DIR, "3rdparty/fcpp")
