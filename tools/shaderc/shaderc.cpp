@@ -2073,6 +2073,11 @@ namespace bgfx
 		_outputSize = _shaderErrorBufferPos;
 	}
 
+	bool compileSPIRVShader(bx::CommandLine& _cmdLine, uint32_t _version, const std::string& _code, bx::WriterI* _writer)
+	{
+		return false;
+	}
+
 } // namespace bgfx
 
 /*int main(int _argc, const char* _argv[])
