@@ -140,16 +140,16 @@ namespace bgfx
 		NULL
 	};
 
-	const char* s_uniformTypeName[] =
-	{
-		"int",  "int",
-		NULL,   NULL,
-		"vec4", "float4",
-		"mat3", "float3x3",
-		"mat4", "float4x4",
-	};
-	BX_STATIC_ASSERT(BX_COUNTOF(s_uniformTypeName) == UniformType::Count*2);
-
+	//@@const char* s_uniformTypeName[] =
+	//@@{
+	//@@	"int",  "int",
+	//@@	NULL//@@,   NULL,
+	//@@	"vec4", "float4",
+	//@@	"mat3", "float3x3",
+	//@@	"mat4", "float4x4",
+	//@@};
+	//@@BX_STATIC_ASSERT(BX_COUNTOF(s_uniformTypeName) == UniformType::Count*2);
+	extern const char* s_uniformTypeName[5];
 
 	Options::Options()
 		: shaderType(' ')
@@ -235,30 +235,32 @@ namespace bgfx
 		return _glsl; // centroid, noperspective
 	}
 
-	const char* getUniformTypeName(UniformType::Enum _enum)
-	{
-		uint32_t idx = _enum & ~(BGFX_UNIFORM_FRAGMENTBIT|BGFX_UNIFORM_SAMPLERBIT);
-		if (idx < UniformType::Count)
-		{
-			return s_uniformTypeName[idx];
-		}
+	//@@const char* getUniformTypeName(UniformType::Enum _enum)
+	//@@{
+	//@@	uint32_t idx = _enum & ~(BGFX_UNIFORM_FRAGMENTBIT|BGFX_UNIFORM_SAMPLERBIT);
+	//@@	if (idx < UniformType::Count)
+	//@@	{
+	//@@		return s_uniformTypeName[idx];
+	//@@	}
+	//@@
+	//@@	return "Unknown uniform type?!";
+	//@@}
 
-		return "Unknown uniform type?!";
-	}
-
-	UniformType::Enum nameToUniformTypeEnum(const char* _name)
-	{
-		for (uint32_t ii = 0; ii < UniformType::Count*2; ++ii)
-		{
-			if (NULL != s_uniformTypeName[ii]
-			&&  0 == bx::strCmp(_name, s_uniformTypeName[ii]) )
-			{
-				return UniformType::Enum(ii/2);
-			}
-		}
-
-		return UniformType::Count;
-	}
+	//@@UniformType::Enum nameToUniformTypeEnum(const char* _name)
+	//@@{
+	//@@	for (uint32_t ii = 0; ii < UniformType::Count*2; ++ii)
+	//@@	{
+	//@@		if (NULL != s_uniformTypeName[ii]
+	//@@		&&  0 == bx::strCmp(_name, s_uniformTypeName[ii]) )
+	//@@		{
+	//@@			return UniformType::Enum(ii/2);
+	//@@		}
+	//@@	}
+	//@@
+	//@@	return UniformType::Count;
+	//@@}
+	extern const char* getUniformTypeName(UniformType::Enum _enum);
+	extern UniformType::Enum nameToUniformTypeEnum(const char* _name);
 
 	int32_t writef(bx::WriterI* _writer, const char* _format, ...)
 	{
@@ -2076,8 +2078,14 @@ namespace bgfx
 		return compiled;
 	}
 
+	char     _shaderErrorBuffer[UINT16_MAX];
+	uint16_t _shaderErrorBufferPos = 0;
+
 	int compileShader(int _argc, const char* _argv[])
 	{
+		_shaderErrorBuffer[0] = '\0';
+		_shaderErrorBufferPos = 0;
+
 		bx::CommandLine cmdLine(_argc, _argv);
 
 		if (cmdLine.hasArg('v', "version") )
@@ -2305,9 +2313,26 @@ namespace bgfx
 		return bx::kExitFailure;
 	}
 
+	void compilerError(const char *_format, ...)
+	{
+		va_list args;
+		va_start(args, _format);
+		_shaderErrorBufferPos += vsprintf(&_shaderErrorBuffer[_shaderErrorBufferPos], _format, args);
+		va_end(args);
+	}
+
+	void getShaderError(char* _outputText, uint16_t& _outputSize)
+	{
+		strcpy(_outputText, _shaderErrorBuffer);
+		_outputSize = _shaderErrorBufferPos;
+	}
+
+	bool compilePSSLShader(const Options&, uint32_t, const std::string&, bx::WriterI*) {}
+	bool compileSPIRVShader(const Options&, uint32_t, const std::string&, bx::WriterI*) {}
+
 } // namespace bgfx
 
-int main(int _argc, const char* _argv[])
-{
-	return bgfx::compileShader(_argc, _argv);
-}
+//@@int main(int _argc, const char* _argv[])
+//@@{
+//@@	return bgfx::compileShader(_argc, _argv);
+//@@}

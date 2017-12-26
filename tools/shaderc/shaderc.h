@@ -169,6 +169,11 @@ namespace bgfx
 	bool compilePSSLShader(const Options& _options, uint32_t _version, const std::string& _code, bx::WriterI* _writer);
 	bool compileSPIRVShader(const Options& _options, uint32_t _version, const std::string& _code, bx::WriterI* _writer);
 
+	void compilerError(const char *_format, ...);
+	int compileShader(int _argc, const char* _argv[]);
+	void getShaderError(char* _outputText, uint16_t& _outputSize);
+	#define fprintf(target, format, ...) compilerError(format, ##__VA_ARGS__)
+
 } // namespace bgfx
 
 #endif // SHADERC_H_HEADER_GUARD

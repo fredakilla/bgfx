@@ -221,7 +221,7 @@ project "fcpp"
 	configuration {}
 
 project "shaderc"
-	kind "ConsoleApp"
+	kind "StaticLib"
 
 	includedirs {
 		path.join(BX_DIR,   "include"),
